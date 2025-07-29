@@ -26,6 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const getSession = async () => {
       try {
+        // Check if Supabase is properly configured
+        if (process.env.NEXT_PUBLIC_SUPABASE_URL === 'placeholder') {
+          setLoading(false)
+          return
+        }
+        
         const { data: { session } } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
         
@@ -41,21 +47,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUserProfile(null)
+    // Only set up auth listener if Supabase is configured
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL !== 'placeholder') {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          setUser(session?.user ?? null)
+          
+          if (session?.user) {
+            await fetchUserProfile(session.user.id)
+          } else {
+            setUserProfile(null)
+          }
+          
+          setLoading(false)
         }
-        
-        setLoading(false)
-      }
-    )
+      )
 
-    return () => subscription.unsubscribe()
+      return () => subscription.unsubscribe()
+    }
   }, [supabase])
 
   const fetchUserProfile = async (userId: string) => {
