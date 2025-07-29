@@ -1,5 +1,4 @@
 import { Message, AnalysisData, APIResponse, ChatError } from '@/types/chat'
-import OpenAIClient from '@/lib/openai/client'
 
 class ChatAPIError extends Error {
   constructor(
@@ -25,14 +24,7 @@ export class ChatAPI {
   }
 
   private constructor() {
-    // Client-side fallback for static export
-    if (typeof window !== 'undefined') {
-      // Running on client side - use mock responses
-      this.openai = null as any
-    } else {
-      // Running on server side - use real OpenAI
-      this.openai = OpenAIClient.getInstance()
-    }
+    // Static export - client-side only
   }
 
   async sendMessage(content: string, userId?: string): Promise<APIResponse<Message>> {
@@ -41,15 +33,9 @@ export class ChatAPI {
         throw new ChatAPIError('Message content cannot be empty', 'validation')
       }
 
-      let response: string
-      if (typeof window !== 'undefined') {
-        // Client-side mock response
-        response = this.generateMockResponse(content)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate delay
-      } else {
-        // Server-side OpenAI response
-        response = await this.openai.generateResponse(content)
-      }
+      // Client-side mock response for static export
+      const response = this.generateMockResponse(content)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate delay
       
       return {
         success: true,
@@ -130,14 +116,9 @@ export class ChatAPI {
 
   private async analyzeText(text: string): Promise<AnalysisData> {
     try {
-      if (typeof window !== 'undefined') {
-        // Client-side mock analysis
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        return this.generateMockAnalysis(text)
-      } else {
-        // Server-side OpenAI analysis
-        return await this.openai.analyzeGermanText(text)
-      }
+      // Client-side mock analysis for static export
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      return this.generateMockAnalysis(text)
     } catch (error) {
       throw new ChatAPIError(
         'Failed to analyze text',

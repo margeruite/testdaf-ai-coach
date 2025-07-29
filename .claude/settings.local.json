@@ -5,7 +5,11 @@
       "Bash(git add:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm run lint)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(rm:*)",
+      "Bash(true)"
     ],
     "deny": []
   }
