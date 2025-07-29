@@ -1,17 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Upload, Bot, User, Paperclip, Image } from 'lucide-react'
+import { Send, Upload, Bot, User, Paperclip, Image, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-
-interface Message {
-  id: string
-  content: string
-  sender: 'user' | 'agent'
-  timestamp: Date
-  type?: 'text' | 'image' | 'analysis'
-  metadata?: any
-}
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { Message, ChatError } from '@/types/chat'
+import { ChatAPI } from '@/lib/api/chat'
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -25,8 +19,10 @@ export function ChatInterface() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [error, setError] = useState<ChatError | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const chatAPI = ChatAPI.getInstance()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -47,62 +43,67 @@ export function ChatInterface() {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const messageContent = inputValue
     setInputValue('')
     setIsTyping(true)
+    setError(null)
 
-    // Simulate AI response
-    setTimeout(() => {
-      const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: generateAIResponse(inputValue),
-        sender: 'agent',
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, agentMessage])
-      setIsTyping(false)
-    }, 1500)
-  }
-
-  const generateAIResponse = (userInput: string): string => {
-    // Simple response generation - will be replaced with actual AI
-    if (userInput.toLowerCase().includes('help')) {
-      return "I'm here to help! You can:\n\n📝 **Upload text**: Send me a photo of your handwriting or type directly\n🔍 **Get feedback**: I'll analyze your grammar, vocabulary, and structure\n💡 **Learn**: Ask me about German grammar rules\n🎯 **Practice**: I'll create exercises based on your mistakes\n\nWhat would you like to start with?"
-    }
-    
-    if (userInput.toLowerCase().includes('grammar')) {
-      return "Great! German grammar can be tricky, but I'm here to help. 📚\n\nSome common areas students struggle with:\n• **Articles** (der, die, das)\n• **Cases** (Nominativ, Akkusativ, Dativ, Genitiv)\n• **Word order** in complex sentences\n• **Verb conjugations** and positions\n\nDo you have a specific grammar question, or would you like me to analyze a text you've written?"
-    }
-
-    return "I understand you want to improve your TestDaF writing! 🎯\n\nPlease share a text with me (either by typing or uploading an image), and I'll provide detailed feedback on:\n\n✅ **Grammar accuracy**\n✅ **Vocabulary usage**\n✅ **Text structure**\n✅ **TestDaF-specific criteria**\n\nI'll explain everything in your native language to make it easier to understand!"
-  }
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      // Handle image upload - will implement OCR later
-      const imageMessage: Message = {
-        id: Date.now().toString(),
-        content: 'Image uploaded for analysis',
-        sender: 'user',
-        timestamp: new Date(),
-        type: 'image',
-        metadata: { fileName: file.name }
-      }
-      setMessages(prev => [...prev, imageMessage])
+    try {
+      const response = await chatAPI.sendMessage(messageContent)
       
-      // Simulate OCR processing
-      setIsTyping(true)
-      setTimeout(() => {
-        const ocrMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "📸 **Image Analysis Complete!**\n\nI can see your handwritten text. Here's what I recognized:\n\n*\"Der Grafik zeigt die Entwicklung der Studenten in Deutschland...\"*\n\n**Quick Analysis:**\n❌ **Grammar Error**: \"Der Grafik\" → should be \"**Die** Grafik\" (feminine article)\n\nWould you like me to provide a complete analysis with detailed feedback and corrections?",
-          sender: 'agent',
-          timestamp: new Date(),
-          type: 'analysis'
-        }
-        setMessages(prev => [...prev, ocrMessage])
-        setIsTyping(false)
-      }, 2000)
+      if (response.success && response.data) {
+        setMessages(prev => [...prev, response.data!])
+      } else if (response.error) {
+        setError(response.error)
+      }
+    } catch (err) {
+      setError({
+        message: 'Failed to send message',
+        type: 'network',
+        details: err instanceof Error ? err.message : 'Unknown error'
+      })
+    } finally {
+      setIsTyping(false)
+    }
+  }
+
+  const clearError = () => {
+    setError(null)
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const imageMessage: Message = {
+      id: Date.now().toString(),
+      content: 'Image uploaded for analysis',
+      sender: 'user',
+      timestamp: new Date(),
+      type: 'image',
+      metadata: { fileName: file.name, fileSize: file.size }
+    }
+    setMessages(prev => [...prev, imageMessage])
+    
+    setIsTyping(true)
+    setError(null)
+
+    try {
+      const response = await chatAPI.uploadAndAnalyzeImage(file)
+      
+      if (response.success && response.data) {
+        setMessages(prev => [...prev, response.data!])
+      } else if (response.error) {
+        setError(response.error)
+      }
+    } catch (err) {
+      setError({
+        message: 'Failed to process image',
+        type: 'upload',
+        details: err instanceof Error ? err.message : 'Unknown error'
+      })
+    } finally {
+      setIsTyping(false)
     }
   }
 
@@ -122,24 +123,25 @@ export function ChatInterface() {
     setDragActive(false)
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      // Handle dropped file
       const file = e.dataTransfer.files[0]
-      if (file.type.startsWith('image/')) {
-        handleFileUpload({ target: { files: [file] } } as any)
-      }
+      const mockEvent = {
+        target: { files: [file] }
+      } as React.ChangeEvent<HTMLInputElement>
+      handleFileUpload(mockEvent)
     }
   }
 
   return (
-    <div 
-      className={`bg-white rounded-2xl shadow-sm border border-gray-200 h-[600px] flex flex-col transition-all duration-200 ${
-        dragActive ? 'border-turquoise bg-turquoise/5' : ''
-      }`}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
-    >
+    <ErrorBoundary>
+      <div 
+        className={`bg-white rounded-2xl shadow-sm border border-gray-200 h-[600px] flex flex-col transition-all duration-200 ${
+          dragActive ? 'border-turquoise bg-turquoise/5' : ''
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <div className="flex items-center space-x-3">
@@ -160,6 +162,27 @@ export function ChatInterface() {
           <span className="text-sm text-petrol font-medium">🇬🇧 English</span>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-red-800 font-medium">{error.message}</p>
+              {error.details && (
+                <p className="text-xs text-red-600 mt-1">{error.details}</p>
+              )}
+            </div>
+            <button
+              onClick={clearError}
+              className="text-red-400 hover:text-red-600 text-sm"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
@@ -296,6 +319,7 @@ export function ChatInterface() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   )
 }

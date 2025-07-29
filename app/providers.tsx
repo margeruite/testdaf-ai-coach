@@ -1,18 +1,11 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Toaster } from 'react-hot-toast'
-import type { Database } from '@/types/database'
-
-// Supabase Context
-const SupabaseContext = createContext<any>(null)
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => createClientComponentClient<Database>())
-
   return (
-    <SupabaseContext.Provider value={supabase}>
+    <AuthProvider>
       {children}
       <Toaster 
         position="top-right"
@@ -38,14 +31,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           },
         }}
       />
-    </SupabaseContext.Provider>
+    </AuthProvider>
   )
-}
-
-export const useSupabase = () => {
-  const context = useContext(SupabaseContext)
-  if (!context) {
-    throw new Error('useSupabase must be used within a Providers component')
-  }
-  return context
 }
