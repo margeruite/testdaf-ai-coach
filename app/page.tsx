@@ -1,16 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { AuthModal } from '@/components/auth/AuthModal'
-import { useAuth } from '@/contexts/AuthContext'
 import { ArrowRight, BookOpen, Brain, Globe, MessageCircle, Trophy, Users, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LandingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const { user } = useAuth()
 
   const features = [
     {
@@ -77,17 +72,11 @@ export default function LandingPage() {
               <Link href="#about" className="text-gray-600 hover:text-petrol transition-colors">
                 About
               </Link>
-              {user ? (
-                <Link href="/dashboard">
-                  <Button size="sm">
-                    Dashboard
-                  </Button>
-                </Link>
-              ) : (
-                <Button size="sm" onClick={() => setShowAuthModal(true)}>
+              <Link href="/dashboard">
+                <button className="bg-gradient-to-r from-petrol to-turquoise text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all">
                   Get Started
-                </Button>
-              )}
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -114,23 +103,16 @@ export default function LandingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              {user ? (
-                <Link href="/dashboard">
-                  <Button size="lg" className="group">
-                    Continue Learning
-                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform w-5 h-5" />
-                  </Button>
-                </Link>
-              ) : (
-                <Button size="lg" className="group" onClick={() => setShowAuthModal(true)}>
+              <Link href="/dashboard">
+                <button className="group bg-gradient-to-r from-petrol to-turquoise text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-xl transition-all flex items-center">
                   Start Free Analysis
                   <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform w-5 h-5" />
-                </Button>
-              )}
-              <Button variant="secondary" size="lg">
+                </button>
+              </Link>
+              <button className="bg-white text-petrol border-2 border-petrol px-8 py-4 rounded-xl font-semibold text-lg hover:bg-petrol hover:text-white transition-all flex items-center">
                 <MessageCircle className="mr-2 w-5 h-5" />
                 Watch Demo
-              </Button>
+              </button>
             </div>
 
             {/* Stats */}
@@ -207,27 +189,15 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {user ? (
-              <Link href="/dashboard">
-                <Button variant="secondary" size="lg" className="bg-white text-petrol hover:bg-white/90">
-                  <Users className="mr-2 w-5 h-5" />
-                  Go to Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                className="bg-white text-petrol hover:bg-white/90"
-                onClick={() => setShowAuthModal(true)}
-              >
+            <Link href="/dashboard">
+              <button className="bg-white text-petrol px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/90 transition-all flex items-center">
                 <Users className="mr-2 w-5 h-5" />
                 Start Your Journey
-              </Button>
-            )}
-            <Button variant="ghost" size="lg" className="text-white border-white/30 hover:bg-white/10">
+              </button>
+            </Link>
+            <button className="text-white border border-white/30 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all">
               Learn More
-            </Button>
+            </button>
           </div>
         </div>
       </section>
@@ -273,10 +243,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </div>
   )
 }
