@@ -1,14 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TopNavigation } from '@/components/dashboard/TopNavigation'
-import { HeroStatsSection } from '@/components/dashboard/HeroStatsSection'
 import { ChatInterface } from '@/components/chat/ChatInterface'
-import { ProgressCard } from '@/components/dashboard/ProgressCard'
-import { AchievementsCard } from '@/components/dashboard/AchievementsCard'
-import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart'
-import { StreakCard } from '@/components/dashboard/StreakCard'
-import { RecentActivity } from '@/components/dashboard/RecentActivity'
+import { Button } from '@/components/ui/Button'
+import { BookOpen, User, Trophy, Star } from 'lucide-react'
 
 // Mock data - will be replaced with real data from Supabase
 const mockUser = {
@@ -49,35 +44,66 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-turquoise/3 to-petrol/5">
-      {/* Top Navigation */}
-      <TopNavigation user={mockUser} />
+      {/* Simple Top Navigation */}
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-main rounded-xl p-2">
+                <BookOpen className="text-white w-6 h-6" />
+              </div>
+              <span className="text-xl font-bold text-petrol">TestDaF Coach</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-r from-petrol to-turquoise rounded-full px-4 py-2">
+                <div className="flex items-center space-x-2">
+                  <Trophy className="text-white w-4 h-4" />
+                  <span className="text-white font-bold">TDN {mockUser.currentTDN}</span>
+                </div>
+              </div>
+              <div className="bg-gold/10 border border-gold/30 rounded-full px-4 py-2">
+                <div className="flex items-center space-x-2">
+                  <Star className="text-gold w-4 h-4" />
+                  <span className="text-gold font-bold">{mockUser.totalPoints.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
       
       {/* Hero Stats Section */}
-      <HeroStatsSection stats={mockStats} />
-      
-      {/* Main Content Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          
-          {/* Left Sidebar - Progress & Goals */}
-          <div className="xl:col-span-1 space-y-6">
-            <ProgressCard />
-            <StreakCard />
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-petrol mb-2">Welcome back, {mockUser.name}!</h1>
+            <p className="text-gray-600">You have {mockStats.daysUntilTest} days until your TestDaF exam</p>
           </div>
           
-          {/* Center - Chat Interface */}
-          <div className="xl:col-span-2">
-            <ChatInterface />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="text-center p-6 bg-gradient-to-br from-petrol/5 to-turquoise/5 rounded-2xl">
+              <div className="text-3xl font-bold text-petrol">{mockStats.daysUntilTest}</div>
+              <div className="text-sm text-gray-600">Days to Test</div>
+            </div>
+            <div className="text-center p-6 bg-gradient-to-br from-turquoise/5 to-mint/5 rounded-2xl">
+              <div className="text-3xl font-bold text-turquoise">{mockStats.currentStreak}</div>
+              <div className="text-sm text-gray-600">Day Streak</div>
+            </div>
+            <div className="text-center p-6 bg-gradient-to-br from-mint/5 to-gold/5 rounded-2xl">
+              <div className="text-3xl font-bold text-mint">{mockStats.totalSessions}</div>
+              <div className="text-sm text-gray-600">Sessions</div>
+            </div>
+            <div className="text-center p-6 bg-gradient-to-br from-gold/5 to-coral/5 rounded-2xl">
+              <div className="text-3xl font-bold text-gold">{mockStats.overallProgress}%</div>
+              <div className="text-sm text-gray-600">Progress</div>
+            </div>
           </div>
-          
-          {/* Right Sidebar - Stats & Achievements */}
-          <div className="xl:col-span-1 space-y-6">
-            <AchievementsCard />
-            <SkillRadarChart />
-            <RecentActivity />
-          </div>
-          
         </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <ChatInterface />
       </div>
     </div>
   )
@@ -92,7 +118,7 @@ function MobileDashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-main rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TDN</span>
+              <BookOpen className="text-white w-5 h-5" />
             </div>
             <div>
               <h2 className="font-bold text-petrol">TDN {mockUser.currentTDN}</h2>
@@ -112,46 +138,10 @@ function MobileDashboard() {
       </div>
 
       {/* Mobile Content */}
-      <div className="p-4 space-y-4">
+      <div className="p-4">
         <ChatInterface />
-        <div className="grid grid-cols-2 gap-4">
-          <ProgressCard />
-          <AchievementsCard />
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <MobileBottomNav />
-    </div>
-  )
-}
-
-// Mobile Bottom Navigation
-function MobileBottomNav() {
-  const navItems = [
-    { id: 'home', label: 'Home', icon: '🏠', active: true },
-    { id: 'practice', label: 'Practice', icon: '📚' },
-    { id: 'achievements', label: 'Achievements', icon: '🏆' },
-    { id: 'profile', label: 'Profile', icon: '👤' },
-  ]
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 safe-area-pb">
-      <div className="flex justify-around">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
-              item.active 
-                ? 'text-petrol bg-turquoise/10' 
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <span className="text-lg">{item.icon}</span>
-            <span className="text-xs font-medium">{item.label}</span>
-          </button>
-        ))}
       </div>
     </div>
   )
 }
+
